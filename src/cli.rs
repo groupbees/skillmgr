@@ -4,6 +4,11 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
+/// What separates the directories of a list, as in `PATH`.
+///
+/// A `:` on Windows would split `C:\skills` into `C` and `\skills`.
+const PATH_LIST_SEPARATOR: char = if cfg!(windows) { ';' } else { ':' };
+
 /// Deploy Agent Skills declared in `skillmgr.yaml`.
 #[derive(Debug, Parser)]
 #[command(name = "skillmgr", version, about, long_about = None)]
@@ -20,12 +25,12 @@ pub struct Cli {
 
     /// Directory to deploy into, overriding the config's `targets`.
     ///
-    /// Repeat the flag for several directories; the environment variable
-    /// takes a colon-separated list.
+    /// Repeat the flag for several directories. The environment variable
+    /// takes a list separated like `PATH`: `;` on Windows, `:` elsewhere.
     #[arg(
         long = "target",
         env = "SKILLMGR_SKILLS_DIR",
-        value_delimiter = ':',
+        value_delimiter = PATH_LIST_SEPARATOR,
         global = true
     )]
     pub targets: Vec<PathBuf>,
@@ -88,4 +93,31 @@ pub enum Command {
 
     /// Print the JSON Schema for `skillmgr.yaml`.
     Schema,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn targets(value: &str) -> Vec<PathBuf> {
+        Cli::parse_from(["skillmgr", "--target", value, "list"]).targets
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_target_list_splits_on_colons() {
+        assert_eq!(
+            targets("/one/skills:~/two"),
+            [PathBuf::from("/one/skills"), PathBuf::from("~/two")]
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_target_list_splits_on_semicolons_and_keeps_drive_letters() {
+        assert_eq!(
+            targets(r"C:\one\skills;D:\two"),
+            [PathBuf::from(r"C:\one\skills"), PathBuf::from(r"D:\two")]
+        );
+    }
 }

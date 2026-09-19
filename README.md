@@ -41,12 +41,21 @@ it.
 
 Download the archive for your platform from the
 [releases](https://github.com/therealm-tech/skillmgr/releases) — macOS on
-Apple Silicon and Intel, Linux on x86_64 and arm64. The Linux binaries are
-statically linked, so they run on any distribution. `SHA256SUMS` on the same
-page lists the archives' checksums:
+Apple Silicon and Intel, Linux on x86_64 and arm64 as `.tar.gz`, Windows on
+x86_64 and arm64 as `.zip`. The Linux binaries are statically linked, so they
+run on any distribution; the Windows ones need no Visual C++ runtime. Unpack
+the archive and put `skillmgr` (`skillmgr.exe` on Windows) on your `PATH`.
+`SHA256SUMS` on the same page lists the archives' checksums:
 
 ```sh
 sha256sum --check --ignore-missing SHA256SUMS
+```
+
+On Windows, compare the output of this PowerShell command with the archive's
+line in `SHA256SUMS`:
+
+```powershell
+Get-FileHash -Algorithm SHA256 skillmgr-x86_64-pc-windows-msvc-v*.zip
 ```
 
 Or build it from source:
@@ -75,10 +84,10 @@ repos:
 
 | Key | Required | Default | Description |
 | --- | --- | --- | --- |
-| `targets` | no | `.claude/skills` and `.agents/skills` | Directories the skills are deployed into, each getting a full copy. `~` is expanded; a relative path resolves against the working directory. |
+| `targets` | no | `.claude/skills` and `.agents/skills` | Directories the skills are deployed into, each getting a full copy. A leading `~` is expanded (`~/` everywhere, `~\` on Windows too); a relative path resolves against the working directory. |
 | `repos[].repo` | yes | — | A git URL, a path to a git repository, or `local` for the directory holding the config file. |
 | `repos[].revision` | for git | — | Tag, branch or commit to check out. Forbidden on `local`. |
-| `repos[].paths[].path` | yes | — | Directory to search, relative to the source root. |
+| `repos[].paths[].path` | yes | — | Directory to search, relative to the source root. Write it with `/`, which every platform reads. |
 | `repos[].paths[].recurse` | no | `false` | Search the whole subtree instead of the immediate children. |
 | `repos[].paths[].exclude` | no | — | Regular expression rejecting skills whose path under `path` matches. |
 
@@ -114,7 +123,7 @@ Every option is also an environment variable:
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
 | `SKILLMGR_CONFIG_FILE` | no | `skillmgr.yaml` | Path to the configuration file. |
-| `SKILLMGR_SKILLS_DIR` | no | — | Colon-separated target directories, overriding the config's `targets`. |
+| `SKILLMGR_SKILLS_DIR` | no | — | Target directories, overriding the config's `targets`, separated like `PATH`: `;` on Windows, `:` elsewhere. |
 | `SKILLMGR_CACHE_DIR` | no | `<cache>/skillmgr` | Where the git checkouts are kept between runs. |
 | `SKILLMGR_OFFLINE` | no | `false` | Work from the cache only, contacting no remote. |
 | `SKILLMGR_DRY_RUN` | no | `false` | Report what `update` would change, and stop. |

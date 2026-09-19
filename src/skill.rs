@@ -136,7 +136,11 @@ pub fn load(dir: &Path) -> Result<Frontmatter, SkillError> {
 }
 
 /// Return the YAML between the opening `---` line and the closing one.
+///
+/// A leading byte order mark is skipped: Windows editors and PowerShell's
+/// `Out-File -Encoding utf8` write one, and it would hide the opening `---`.
 fn split_frontmatter(text: &str) -> Option<&str> {
+    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
     let body = text
         .strip_prefix("---\n")
         .or_else(|| text.strip_prefix("---\r\n"))?;
@@ -271,5 +275,20 @@ mod tests {
         assert_eq!(split_frontmatter("---\na: 1\n---\nbody\n"), Some("a: 1\n"));
         assert_eq!(split_frontmatter("no marker\n"), None);
         assert_eq!(split_frontmatter("---\nunterminated\n"), None);
+    }
+
+    #[test]
+    fn loads_a_skill_saved_with_windows_line_endings_and_a_byte_order_mark() {
+        let root = tempfile::tempdir().unwrap();
+        let dir = write_skill(
+            root.path(),
+            "deploy",
+            "\u{feff}---\r\nname: deploy\r\ndescription: Ship it.\r\n---\r\n\r\nBody.\r\n",
+        );
+
+        let frontmatter = load(&dir).unwrap();
+
+        assert_eq!(frontmatter.name, "deploy");
+        assert_eq!(frontmatter.description, "Ship it.");
     }
 }

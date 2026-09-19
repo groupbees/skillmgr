@@ -1,13 +1,13 @@
 //! Turning the config into the list of skills that should be deployed.
 
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{Context, Result, bail};
 
 use crate::config::Config;
 use crate::skill;
-use crate::source::Materializer;
+use crate::source::{Materializer, relative_slug};
 use crate::{deploy, discovery};
 
 /// One skill the config selects, ready to be installed.
@@ -108,13 +108,4 @@ pub async fn build(config: &Config, materializer: &impl Materializer) -> Result<
         skills: skills.into_values().collect(),
         problems,
     })
-}
-
-fn relative_slug(root: &Path, path: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .components()
-        .map(|part| part.as_os_str().to_string_lossy())
-        .collect::<Vec<_>>()
-        .join("/")
 }

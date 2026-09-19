@@ -70,8 +70,9 @@ pub async fn checkout(
 fn cache_key(url: &str, revision: &str) -> String {
     let digest = Sha256::digest(format!("{url}\n{revision}").as_bytes());
     let slug: String = url
+        .trim_end_matches(['/', '\\'])
         .trim_end_matches(".git")
-        .rsplit(['/', ':'])
+        .rsplit(['/', '\\', ':'])
         .next()
         .unwrap_or("repo")
         .chars()
@@ -160,12 +161,21 @@ async fn resolve(repo_dir: &Path, revision: &str, fetched: Fetch) -> Result<Stri
     bail!("no local ref matches `{revision}`")
 }
 
-async fn git(repo_dir: &Path, args: &[&str]) -> Result<String> {
-    tracing::trace!(dir = %repo_dir.display(), ?args, "running git");
-    let output = Command::new("git")
+fn command(repo_dir: &Path, args: &[&str]) -> Command {
+    let mut command = Command::new("git");
+    // Git for Windows stops at 260-character paths without this, and a skill
+    // nested in the cache easily passes that. Other platforms ignore it.
+    command
+        .args(["-c", "core.longpaths=true"])
         .args(args)
         .current_dir(repo_dir)
-        .stdin(Stdio::null())
+        .stdin(Stdio::null());
+    command
+}
+
+async fn git(repo_dir: &Path, args: &[&str]) -> Result<String> {
+    tracing::trace!(dir = %repo_dir.display(), ?args, "running git");
+    let output = command(repo_dir, args)
         .output()
         .await
         .context("cannot run `git`; skillmgr needs it on PATH")?;
@@ -195,6 +205,23 @@ mod tests {
         let key = cache_key("git@github.com:toto/tata.git", "main");
 
         assert!(key.starts_with("tata-"), "{key}");
+    }
+
+    #[test]
+    fn cache_keys_name_a_local_path_after_its_last_directory() {
+        for url in [r"C:\repos\tata", "C:/repos/tata/", "/srv/git/tata.git/"] {
+            let key = cache_key(url, "main");
+
+            assert!(key.starts_with("tata-"), "{url} gave {key}");
+        }
+    }
+
+    #[test]
+    fn lifts_the_windows_path_length_limit_on_every_call() {
+        let command = command(Path::new("."), &["fetch", "origin"]);
+        let args: Vec<_> = command.as_std().get_args().collect();
+
+        assert_eq!(args, ["-c", "core.longpaths=true", "fetch", "origin"]);
     }
 
     #[tokio::test]

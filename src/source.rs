@@ -66,7 +66,8 @@ impl Materializer for Fetcher {
     }
 }
 
-/// The default cache root, honouring `XDG_CACHE_HOME` through [`dirs`].
+/// The default cache root: the platform cache directory through [`dirs`]
+/// (`XDG_CACHE_HOME` on Linux, `%LOCALAPPDATA%` on Windows).
 #[must_use]
 pub fn default_cache_dir() -> PathBuf {
     dirs::cache_dir().map_or_else(
@@ -91,4 +92,33 @@ pub fn contained_join(root: &Path, relative: &Path) -> Result<PathBuf> {
         root.display()
     );
     Ok(canonical)
+}
+
+/// `path` relative to `base`, joined with `/` whatever the platform.
+///
+/// This is the form `exclude` patterns match, the state file records, and the
+/// checksum hashes, so none of them depends on the machine that produced it.
+#[must_use]
+pub fn relative_slug(base: &Path, path: &Path) -> String {
+    path.strip_prefix(base)
+        .unwrap_or(path)
+        .components()
+        .map(|part| part.as_os_str().to_string_lossy())
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_relative_slug_uses_forward_slashes_on_every_platform() {
+        let root = Path::new("root");
+
+        assert_eq!(
+            relative_slug(root, &root.join("nested").join("demo")),
+            "nested/demo"
+        );
+    }
 }
