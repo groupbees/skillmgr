@@ -84,6 +84,9 @@ on `PATH`, since the tests that create a repository call it. They configure
 `user.name`, `user.email` and `commit.gpgsign=false` in each fixture
 repository, so a global signing setup does not break them.
 
+The suite runs on Linux and Windows in CI. A test whose behaviour depends on
+the platform is gated with `#[cfg(unix)]` or `#[cfg(windows)]`.
+
 New behaviour comes with tests, and a fix comes with the regression test that
 would have caught it.
 
@@ -113,7 +116,7 @@ pre-commit run cargo-clippy --all-files
 | `cargo-clippy` | `clippy` with `pedantic`, warnings denied | Fix the finding, or add a scoped `#[allow]` with a justification |
 | `skillmgr-validate` | [examples/skillmgr.yaml](examples/skillmgr.yaml) still satisfies the config rules | Fix the example, or the rule that broke it |
 | `skillmgr-schema` | [schema/skillmgr.schema.json](schema/skillmgr.schema.json) matches the config types | Re-run; the hook rewrites the file |
-| `shellcheck` | [scripts/release.sh](scripts/release.sh) | Fix the script |
+| `shellcheck` | The scripts in [scripts/](scripts/) | Fix the script |
 
 [.pre-commit-hooks.yaml](.pre-commit-hooks.yaml) at the repository root is a
 different file with a confusingly similar name: it declares the hook *other*
@@ -131,9 +134,9 @@ commit gate stays fast.
 
 | Workflow | Triggers on | What it does | Reproduce locally |
 | --- | --- | --- | --- |
-| [quality.yaml](.github/workflows/quality.yaml) | every push to `main`, every pull request | `pre-commit run --all-files`, then `cargo test --all-targets --locked` | `pre-commit run --all-files` and `cargo test --all-targets --locked` |
+| [quality.yaml](.github/workflows/quality.yaml) | every push to `main`, every pull request | `pre-commit run --all-files` on Linux, and `cargo test --all-targets --locked` on both Linux (`ubuntu-24.04`) and Windows (`windows-2025`) | `pre-commit run --all-files` and `cargo test --all-targets --locked`; for Windows, `cargo clippy --all-targets --target x86_64-pc-windows-msvc -- -D warnings` type-checks the Windows code paths from any host |
 | [security.yaml](.github/workflows/security.yaml) | every push to `main`, every pull request, weekly | `trivy fs` over the repo, failing on fixable `HIGH`/`CRITICAL`, and a second non-blocking scan uploaded to code scanning | `trivy fs .` |
-| [release.yaml](.github/workflows/release.yaml) | tag `v*` | Checks the tag against `Cargo.toml`, builds the binaries on native runners, creates the GitHub release | — |
+| [release.yaml](.github/workflows/release.yaml) | tag `v*` | Checks the tag against `Cargo.toml`, builds the `.tar.gz` archives for Linux (musl, x86_64 and arm64) and macOS (arm64 and x86_64) and the `.zip` archives for Windows (MSVC, x86_64 and arm64, each on its native runner), creates the GitHub release with a `SHA256SUMS` over all of them | — |
 
 `quality` and `security` are the checks that block a merge. `release` has no
 local equivalent: it publishes, and it runs only from a tag.

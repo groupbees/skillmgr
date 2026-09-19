@@ -7,7 +7,7 @@ use walkdir::WalkDir;
 
 use crate::config::PathSpec;
 use crate::skill::SKILL_FILE;
-use crate::source::contained_join;
+use crate::source::{contained_join, relative_slug};
 
 /// List the skill directories a `paths:` entry selects, in a stable order.
 ///
@@ -92,15 +92,6 @@ fn outermost(hits: &[PathBuf]) -> Vec<PathBuf> {
         })
         .cloned()
         .collect()
-}
-
-fn relative_slug(base: &Path, path: &Path) -> String {
-    path.strip_prefix(base)
-        .unwrap_or(path)
-        .components()
-        .map(|part| part.as_os_str().to_string_lossy())
-        .collect::<Vec<_>>()
-        .join("/")
 }
 
 #[cfg(test)]

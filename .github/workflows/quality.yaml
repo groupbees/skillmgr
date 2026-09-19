@@ -37,8 +37,17 @@ jobs:
         run: pre-commit run --all-files --show-diff-on-failure
 
   test:
-    name: test
-    runs-on: ubuntu-24.04
+    name: test (${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-24.04
+          - windows-2025
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
