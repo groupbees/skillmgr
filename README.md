@@ -39,12 +39,21 @@ it.
 
 ### Installation
 
+Download the archive for your platform from the
+[releases](https://github.com/therealm-tech/skillmgr/releases) — macOS on
+Apple Silicon and Intel, Linux on x86_64 and arm64. The Linux binaries are
+statically linked, so they run on any distribution. `SHA256SUMS` on the same
+page lists the archives' checksums:
+
+```sh
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+Or build it from source:
+
 ```sh
 cargo install --git https://github.com/therealm-tech/skillmgr
 ```
-
-Or download the binary for your platform from the
-[releases](https://github.com/therealm-tech/skillmgr/releases).
 
 ### Configuration
 

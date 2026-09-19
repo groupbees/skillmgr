@@ -113,7 +113,7 @@ pre-commit run cargo-clippy --all-files
 | `cargo-clippy` | `clippy` with `pedantic`, warnings denied | Fix the finding, or add a scoped `#[allow]` with a justification |
 | `skillmgr-validate` | [examples/skillmgr.yaml](examples/skillmgr.yaml) still satisfies the config rules | Fix the example, or the rule that broke it |
 | `skillmgr-schema` | [schema/skillmgr.schema.json](schema/skillmgr.schema.json) matches the config types | Re-run; the hook rewrites the file |
-| `shellcheck` | [scripts/release.sh](scripts/release.sh) | Fix the script |
+| `shellcheck` | The scripts in [scripts/](scripts/) | Fix the script |
 
 [.pre-commit-hooks.yaml](.pre-commit-hooks.yaml) at the repository root is a
 different file with a confusingly similar name: it declares the hook *other*
@@ -133,7 +133,7 @@ commit gate stays fast.
 | --- | --- | --- | --- |
 | [quality.yaml](.github/workflows/quality.yaml) | every push to `main`, every pull request | `pre-commit run --all-files`, then `cargo test --all-targets --locked` | `pre-commit run --all-files` and `cargo test --all-targets --locked` |
 | [security.yaml](.github/workflows/security.yaml) | every push to `main`, every pull request, weekly | `trivy fs` over the repo, failing on fixable `HIGH`/`CRITICAL`, and a second non-blocking scan uploaded to code scanning | `trivy fs .` |
-| [release.yaml](.github/workflows/release.yaml) | tag `v*` | Checks the tag against `Cargo.toml`, builds the binaries on native runners, creates the GitHub release | — |
+| [release.yaml](.github/workflows/release.yaml) | tag `v*` | Checks the tag against `Cargo.toml`, builds the archives for Linux (musl, x86_64 and arm64) and macOS (arm64 and x86_64), creates the GitHub release with a `SHA256SUMS` | — |
 
 `quality` and `security` are the checks that block a merge. `release` has no
 local equivalent: it publishes, and it runs only from a tag.
