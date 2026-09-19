@@ -1,0 +1,6 @@
+repos:
+  - repo: https://github.com/leroyguillaume/claude
+    revision: HEAD
+    paths:
+      - path: skills/
+        recurse: true
