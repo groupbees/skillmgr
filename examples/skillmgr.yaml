@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/therealm-tech/skillmgr/main/schema/skillmgr.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/groupbees/skillmgr/main/schema/skillmgr.schema.json
 #
 # Every key skillmgr understands, with its default in a comment.
 

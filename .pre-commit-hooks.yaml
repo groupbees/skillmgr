@@ -1,6 +1,6 @@
 # Hooks this repository publishes. Consume them from another repo with:
 #
-#   - repo: https://github.com/therealm-tech/skillmgr
+#   - repo: https://github.com/groupbees/skillmgr
 #     rev: v0.1.0
 #     hooks:
 #       - id: skillmgr-validate

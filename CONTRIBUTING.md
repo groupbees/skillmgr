@@ -1,7 +1,7 @@
 # Contributing
 
 Issues and pull requests go to
-<https://github.com/therealm-tech/skillmgr>. The short version: install the
+<https://github.com/groupbees/skillmgr>. The short version: install the
 toolchain, run `pre-commit install`, keep `cargo test` green.
 
 ## Development setup

@@ -40,7 +40,7 @@ it.
 ### Installation
 
 Download the archive for your platform from the
-[releases](https://github.com/therealm-tech/skillmgr/releases) — macOS on
+[releases](https://github.com/groupbees/skillmgr/releases) — macOS on
 Apple Silicon and Intel, Linux on x86_64 and arm64 as `.tar.gz`, Windows on
 x86_64 and arm64 as `.zip`. The Linux binaries are statically linked, so they
 run on any distribution; the Windows ones need no Visual C++ runtime. Unpack
@@ -61,7 +61,7 @@ Get-FileHash -Algorithm SHA256 skillmgr-x86_64-pc-windows-msvc-v*.zip
 Or build it from source:
 
 ```sh
-cargo install --git https://github.com/therealm-tech/skillmgr
+cargo install --git https://github.com/groupbees/skillmgr
 ```
 
 ### Configuration
@@ -111,7 +111,7 @@ editor at it for completion and inline errors, by adding this first line to
 `skillmgr.yaml`:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/therealm-tech/skillmgr/main/schema/skillmgr.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/groupbees/skillmgr/main/schema/skillmgr.schema.json
 ```
 
 `skillmgr schema` prints the same document, for a validator that wants it on
@@ -190,7 +190,7 @@ can keep it honest. In that repository's `.pre-commit-config.yaml`:
 
 ```yaml
 repos:
-  - repo: https://github.com/therealm-tech/skillmgr
+  - repo: https://github.com/groupbees/skillmgr
     rev: v0.1.0
     hooks:
       - id: skillmgr-validate

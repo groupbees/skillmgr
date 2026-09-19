@@ -8,7 +8,7 @@ use crate::config::Config;
 
 /// Where the published schema is served from.
 pub const SCHEMA_ID: &str =
-    "https://raw.githubusercontent.com/therealm-tech/skillmgr/main/schema/skillmgr.schema.json";
+    "https://raw.githubusercontent.com/groupbees/skillmgr/main/schema/skillmgr.schema.json";
 
 /// Path of the copy committed to this repository.
 pub const SCHEMA_PATH: &str = "schema/skillmgr.schema.json";
