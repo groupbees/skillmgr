@@ -10,6 +10,8 @@ use anyhow::{Context, Result};
 use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
 
+use crate::source::relative_slug;
+
 /// Prefix of the staging directories an install renames from.
 pub const STAGING_PREFIX: &str = ".skillmgr-staging-";
 /// Prefix of the directories a replacement moves the previous version to.
@@ -36,8 +38,7 @@ pub fn checksum(dir: &Path) -> Result<String> {
 
     let mut hasher = Sha256::new();
     for file in files {
-        let relative = file.strip_prefix(dir).unwrap_or(&file);
-        hasher.update(relative.to_string_lossy().as_bytes());
+        hasher.update(relative_slug(dir, &file).as_bytes());
         hasher.update([0]);
         let contents =
             std::fs::read(&file).with_context(|| format!("cannot read {}", file.display()))?;

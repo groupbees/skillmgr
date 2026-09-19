@@ -1,7 +1,7 @@
 //! The declarative input: `skillmgr.yaml`, its schema, and its validation.
 
 use std::collections::BTreeSet;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow};
 use regex::Regex;
@@ -222,11 +222,15 @@ fn check_revision_matches_repo(repo: &RepoSpec) -> Result<(), ValidationError> {
     Ok(())
 }
 
+/// Judge `path` the same way on every platform, `/` and `\` alike, so a
+/// shared config that passes on Linux cannot escape the root on Windows.
 fn check_contained_path(path: &Path) -> Result<(), ValidationError> {
-    if path.is_absolute() {
+    let text = path.to_string_lossy();
+    let has_drive = matches!(text.as_bytes(), [letter, b':', ..] if letter.is_ascii_alphabetic());
+    if text.starts_with(['/', '\\']) || has_drive {
         return Err(named_error("path", "must be relative to the source root"));
     }
-    if path.components().any(|part| part == Component::ParentDir) {
+    if text.split(['/', '\\']).any(|part| part == "..") {
         return Err(named_error("path", "must not climb out of the source root"));
     }
     Ok(())
@@ -323,6 +327,38 @@ mod tests {
     }
 
     #[test]
+    fn rejects_a_windows_path_escaping_the_source_root_on_every_platform() {
+        for path in [
+            r"..\elsewhere",
+            r"skills\..\..\elsewhere",
+            r"\elsewhere",
+            r"C:\elsewhere",
+            "C:elsewhere",
+            "c:/elsewhere",
+        ] {
+            let yaml = format!("repos:\n  - repo: local\n    paths:\n      - path: '{path}'\n");
+            assert!(parse(&yaml).is_err(), "{path} was accepted");
+        }
+    }
+
+    #[test]
+    fn accepts_a_nested_path_in_either_separator() {
+        for path in ["skills/nested", r"skills\nested", "./skills", "skills..old"] {
+            let yaml = format!("repos:\n  - repo: local\n    paths:\n      - path: '{path}'\n");
+            assert!(parse(&yaml).is_ok(), "{path} was refused");
+        }
+    }
+
+    #[test]
+    fn reads_a_config_with_windows_line_endings_and_a_byte_order_mark() {
+        let config =
+            parse("\u{feff}repos:\r\n  - repo: local\r\n    paths:\r\n      - path: skills\r\n")
+                .unwrap();
+
+        assert_eq!(config.repos[0].paths[0].path, PathBuf::from("skills"));
+    }
+
+    #[test]
     fn rejects_an_empty_repo_list() {
         assert!(parse("repos: []\n").is_err());
     }
@@ -384,6 +420,25 @@ mod tests {
         assert_eq!(
             expand_home(Path::new("relative/path")),
             PathBuf::from("relative/path")
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn expands_a_leading_tilde_with_a_backslash() {
+        let home = dirs::home_dir().unwrap();
+        assert_eq!(
+            expand_home(Path::new(r"~\.claude\skills")),
+            home.join(".claude").join("skills")
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn leaves_a_tilde_backslash_alone_where_backslash_is_a_file_name_character() {
+        assert_eq!(
+            expand_home(Path::new(r"~\skills")),
+            PathBuf::from(r"~\skills")
         );
     }
 }

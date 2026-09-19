@@ -49,10 +49,19 @@ jobs:
             target: aarch64-apple-darwin
           - runner: macos-15
             target: x86_64-apple-darwin
+          - runner: windows-2025
+            target: x86_64-pc-windows-msvc
+          - runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
     runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
     env:
       TARGET: ${{ matrix.target }}
       ARCHIVE: skillmgr-${{ matrix.target }}-v${{ needs.version.outputs.version }}
+      BINARY: skillmgr${{ endsWith(matrix.target, '-windows-msvc') && '.exe' || '' }}
+      FORMAT: ${{ endsWith(matrix.target, '-windows-msvc') && 'zip' || 'tar.gz' }}
     steps:
       - name: check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -68,20 +77,25 @@ jobs:
       # The x86_64 macOS binary is cross-built on Apple Silicon and runs here
       # under Rosetta 2, which the macos-15 image ships.
       - name: check that the binary runs
-        run: '"target/${TARGET}/release/skillmgr" --version'
+        run: '"target/${TARGET}/release/${BINARY}" --version'
 
       - name: package the archive
         run: |
           mkdir "$ARCHIVE"
-          cp "target/${TARGET}/release/skillmgr" LICENSE README.md "$ARCHIVE/"
-          # BSD tar on macOS otherwise adds AppleDouble `._*` entries.
-          COPYFILE_DISABLE=1 tar -czf "${ARCHIVE}.tar.gz" "$ARCHIVE"
+          cp "target/${TARGET}/release/${BINARY}" LICENSE README.md "$ARCHIVE/"
+          if [ "$FORMAT" = zip ]; then
+            # Git Bash's GNU tar cannot write a zip; the bsdtar Windows ships can.
+            "$(cygpath "$SYSTEMROOT")/System32/tar.exe" -a -cf "${ARCHIVE}.zip" "$ARCHIVE"
+          else
+            # BSD tar on macOS otherwise adds AppleDouble `._*` entries.
+            COPYFILE_DISABLE=1 tar -czf "${ARCHIVE}.tar.gz" "$ARCHIVE"
+          fi
 
       - name: keep the archive for the release job
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ env.ARCHIVE }}
-          path: ${{ env.ARCHIVE }}.tar.gz
+          path: ${{ env.ARCHIVE }}.${{ env.FORMAT }}
           if-no-files-found: error
 
   publish:
@@ -101,7 +115,7 @@ jobs:
 
       - name: write the checksums
         working-directory: artifacts
-        run: sha256sum -- *.tar.gz > SHA256SUMS
+        run: sha256sum -- *.tar.gz *.zip > SHA256SUMS
 
       - name: create the GitHub release
         env:
