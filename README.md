@@ -1,5 +1,9 @@
 # skillmgr
 
+<p align="center">
+  <img src="assets/logo.svg" alt="skillmgr logo" width="480">
+</p>
+
 Deploy [Agent Skills](https://agentskills.io) from git repositories and local
 directories, declaratively, from a single `skillmgr.yaml`.
 
